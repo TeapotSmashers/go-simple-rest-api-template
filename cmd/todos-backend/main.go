@@ -1,18 +1,54 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	chimiddleware "github.com/go-chi/chi/middleware"
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/sankalpmukim/todos-backend/internal/auth"
+	"github.com/sankalpmukim/todos-backend/internal/initialize"
+	"github.com/sankalpmukim/todos-backend/pkg/logs"
 )
 
 func main() {
+	if err := initialize.InitAll(); err != nil {
+		fmt.Println("Error occured during initialization", err)
+		panic(err)
+	}
+
+	// Get the value of the DEBUG environment variable
+	DEBUG := os.Getenv("DEBUG")
+	if DEBUG != "true" {
+		// cannot use logs package here because it
+		// doesn't print to the console.
+		fmt.Printf("DEBUG = %v\n", DEBUG)
+	}
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(chimiddleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World!"))
 	})
-	http.ListenAndServe(":3000", r)
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(auth.SupabaseTokenAuth))
+		r.Use(jwtauth.Authenticator)
+		r.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
+			_, claims, _ := jwtauth.FromContext(r.Context())
+			w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["email"])))
+		})
+	})
+
+	// Listen on port 3000
+	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = "3000"
+	}
+	logs.Info("Starting server on port " + PORT)
+	http.ListenAndServe(":"+PORT, r)
 }
