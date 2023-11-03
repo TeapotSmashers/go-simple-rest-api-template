@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -40,7 +41,25 @@ func main() {
 		r.Use(jwtauth.Authenticator)
 		r.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
-			w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["email"])))
+			// w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["email"])))
+
+			email := claims["email"].(string)
+
+			if email == "" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"error": "Unauthorized",
+				})
+				return
+			}
+
+			response := map[string]interface{}{
+				"email": email,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
 		})
 	})
 
