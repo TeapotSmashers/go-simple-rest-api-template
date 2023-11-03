@@ -10,19 +10,14 @@ import (
 
 func CreateUserIfNotFound(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logs.Info("1. CreateUserIfNotFound middleware")
 		_, claims, err := jwtauth.FromContext(r.Context())
-		logs.Info("2. CreateUserIfNotFound middleware")
 		if err != nil {
 			logs.Error("Error getting claims from context", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		logs.Info("3. CreateUserIfNotFound middleware")
 		email := claims["email"].(string)
-		logs.Info("4. CreateUserIfNotFound middleware")
 		exists, err := database.DB.UserExists(email)
-		logs.Info("5. CreateUserIfNotFound middleware")
 		if err != nil {
 			logs.Error("Error checking if user exists", err)
 			w.WriteHeader(http.StatusInternalServerError)
