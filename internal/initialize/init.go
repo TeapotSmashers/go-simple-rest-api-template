@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/joho/godotenv"
-	"github.com/sankalpmukim/todos-backend/internal/auth"
 	"github.com/sankalpmukim/todos-backend/internal/database"
+	"github.com/sankalpmukim/todos-backend/internal/middleware"
 	"github.com/sankalpmukim/todos-backend/pkg/logs"
 )
 
@@ -22,7 +22,7 @@ func InitAll() error {
 		fmt.Println("Error initializing database")
 		return err
 	}
-	auth.Initialize()
+	middleware.Initialize()
 	return nil
 }
 

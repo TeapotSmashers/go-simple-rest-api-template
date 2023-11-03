@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi"
 	chimiddleware "github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/sankalpmukim/todos-backend/internal/auth"
 	"github.com/sankalpmukim/todos-backend/internal/initialize"
+	"github.com/sankalpmukim/todos-backend/internal/middleware"
 	"github.com/sankalpmukim/todos-backend/pkg/logs"
 )
 
@@ -37,11 +37,17 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier(auth.SupabaseTokenAuth))
+		r.Use(jwtauth.Verifier(middleware.SupabaseTokenAuth))
 		r.Use(jwtauth.Authenticator)
+		r.Use(middleware.CreateUserIfNotFound)
 		r.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
-			_, claims, _ := jwtauth.FromContext(r.Context())
+			_, claims, err := jwtauth.FromContext(r.Context())
 			// w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["email"])))
+			if err != nil {
+				logs.Error("Error getting claims from context", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
 			email := claims["email"].(string)
 

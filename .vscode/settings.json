@@ -1,0 +1,11 @@
+{
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "driver": "PostgreSQL",
+      "name": "Todos Dev",
+      "connectString": "postgresql://postgres:root@localhost:5432/todos_backend"
+    }
+  ]
+}
