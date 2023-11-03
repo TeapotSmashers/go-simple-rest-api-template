@@ -54,7 +54,14 @@ type DBInterface interface {
 	UserExists(email string) (bool, error)
 	GetUserByEmail(email string) (User, error)
 
-	// SignUpUser(user User) error
+	// todos
+	GetTodos(userId string) ([]Todo, error)
+	GetTodoByID(id int) (Todo, error)
+	CreateTodoForUser(userID string, todo Todo) error
+	SetTodoCompletedForUser(userID string, id int, done bool) error
+	DeleteTodoForUser(userID string, id int) error
+	UpdateTodoForUser(userID string, id int, todo Todo) error
+
 	Close() error
 }
 

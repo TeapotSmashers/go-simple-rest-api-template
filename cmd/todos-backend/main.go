@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,8 +8,10 @@ import (
 	"github.com/go-chi/chi"
 	chimiddleware "github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/sankalpmukim/todos-backend/internal/handlers"
 	"github.com/sankalpmukim/todos-backend/internal/initialize"
 	"github.com/sankalpmukim/todos-backend/internal/middleware"
+	"github.com/sankalpmukim/todos-backend/internal/routers"
 	"github.com/sankalpmukim/todos-backend/pkg/logs"
 )
 
@@ -30,43 +31,14 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World!"))
-	})
-	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-	})
+	r.Get("/", handlers.HelloWorld)
+	r.Get("/healthz", handlers.HealthZ)
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(middleware.SupabaseTokenAuth))
 		r.Use(jwtauth.Authenticator)
 		r.Use(middleware.CreateUserIfNotFound)
-		r.Get("/auth", func(w http.ResponseWriter, r *http.Request) {
-			_, claims, err := jwtauth.FromContext(r.Context())
-			// w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["email"])))
-			if err != nil {
-				logs.Error("Error getting claims from context", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			email := claims["email"].(string)
-
-			if email == "" {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusUnauthorized)
-
-				json.NewEncoder(w).Encode(map[string]interface{}{
-					"error": "Unauthorized",
-				})
-				return
-			}
-
-			response := map[string]interface{}{
-				"email": email,
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-		})
+		r.Get("/auth", handlers.ReturnMail)
+		r.Mount("/todos", routers.Todos)
 	})
 
 	// Listen on port 3000
