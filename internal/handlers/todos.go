@@ -121,18 +121,9 @@ func CreateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create todo
-	todoId, err := database.DB.CreateTodoForUser(userID, createTodo)
+	todo, err := database.DB.CreateTodoForUser(userID, createTodo)
 	if err != nil {
 		logs.Error("Error creating todo", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// get todo from database
-	todo, err := database.DB.GetTodoByID(todoId)
-
-	if err != nil {
-		logs.Error("Error getting todo from database", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -184,15 +175,42 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decode request body
-	var todoUpdate database.Todo
+	var todoUpdate database.UpdateTodo
 	if err := json.NewDecoder(r.Body).Decode(&todoUpdate); err != nil {
 		logs.Error("Error decoding request body", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve the current values for the todo
+	currentTodo, err := database.DB.GetTodoByID(todoID)
+	if err != nil {
+		logs.Error("Error retrieving the current todo", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// update todo
-	if err := database.DB.UpdateTodoForUser(userID, todoID, todoUpdate); err != nil {
+	// Check what fields are present in the update and change only those
+	if todoUpdate.Title != "" {
+		currentTodo.Title = todoUpdate.Title
+	}
+	if todoUpdate.Description != "" {
+		currentTodo.Description = todoUpdate.Description
+	}
+	if r.Body != nil { // This checks if 'done' was sent in the request
+		currentTodo.Done = todoUpdate.Done
+	}
+
+	// set todoUpdate with currentTodo values
+	todoUpdate = database.UpdateTodo{
+		Title:       currentTodo.Title,
+		Description: currentTodo.Description,
+		Done:        currentTodo.Done,
+	}
+
+	// Update the todo with potentially updated fields
+	updatedTodo, err := database.DB.UpdateTodoForUser(userID, todoID, todoUpdate)
+	if err != nil {
 		logs.Error("Error updating todo", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -200,7 +218,7 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 
 	// return updated todo
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(todoUpdate); err != nil {
+	if err := json.NewEncoder(w).Encode(updatedTodo); err != nil {
 		logs.Error("Error writing JSON response", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

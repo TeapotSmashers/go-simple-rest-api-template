@@ -57,10 +57,10 @@ type DBInterface interface {
 	// todos
 	GetTodos(userId string) ([]Todo, error)
 	GetTodoByID(id int) (Todo, error)
-	CreateTodoForUser(userID string, todo CreateTodo) (int, error)
+	CreateTodoForUser(userID string, todo CreateTodo) (Todo, error)
 	SetTodoCompletedForUser(userID string, id int, done bool) error
 	DeleteTodoForUser(userID string, id int) error
-	UpdateTodoForUser(userID string, id int, todo Todo) error
+	UpdateTodoForUser(userID string, id int, todo UpdateTodo) (Todo, error)
 
 	Close() error
 }

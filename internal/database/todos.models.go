@@ -19,6 +19,12 @@ type CreateTodo struct {
 	Description string `json:"description"`
 }
 
+type UpdateTodo struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Done        bool   `json:"done"`
+}
+
 func (db *Database) GetTodos(userID string) ([]Todo, error) {
 	var todos []Todo
 	err := db.conn.Select(&todos, "SELECT * FROM todos WHERE user_id=$1", userID)
@@ -32,18 +38,24 @@ func (db *Database) GetTodoByID(id int) (Todo, error) {
 }
 
 // CreateTodoForUser inserts a new TODO for a user and returns the new ID
-func (db *Database) CreateTodoForUser(userID string, todo CreateTodo) (int, error) {
-	var todoID int // This will hold the new ID
+func (db *Database) CreateTodoForUser(userID string, todo CreateTodo) (Todo, error) {
+	var newTodo Todo
 
-	// Use QueryRow to execute the query and RETURNING clause to get the new ID
-	err := db.conn.QueryRow("INSERT INTO todos (user_id, title, description) VALUES ($1, $2, $3) RETURNING id", userID, todo.Title, todo.Description).Scan(&todoID)
+	// Use QueryRow to execute the query and RETURNING clause to get all the fields
+	err := db.conn.QueryRowx(`
+		INSERT INTO todos (user_id, title, description) 
+		VALUES ($1, $2, $3) 
+		RETURNING id, user_id, title, description, done, created_at, updated_at`,
+		userID, todo.Title, todo.Description,
+	).StructScan(&newTodo)
+
 	if err != nil {
 		// Handle the error; the insertion failed
-		return 0, err
+		return Todo{}, err
 	}
 
-	// Return the new ID and no error
-	return todoID, nil
+	// Return the new Todo struct
+	return newTodo, nil
 }
 
 func (db *Database) SetTodoCompletedForUser(userID string, id int, done bool) error {
@@ -51,9 +63,25 @@ func (db *Database) SetTodoCompletedForUser(userID string, id int, done bool) er
 	return err
 }
 
-func (db *Database) UpdateTodoForUser(userID string, id int, todo Todo) error {
-	_, err := db.conn.Exec("UPDATE todos SET title=$1, description=$2, done=$3 WHERE id=$4 AND user_id=$5", todo.Title, todo.Description, todo.Done, id, userID)
-	return err
+func (db *Database) UpdateTodoForUser(userID string, id int, todo UpdateTodo) (Todo, error) {
+	var updatedTodo Todo
+
+	// Use QueryRowx to execute the query, RETURNING clause to get all fields of the updated row
+	err := db.conn.QueryRowx(`
+		UPDATE todos 
+		SET title=$1, description=$2, done=$3, updated_at=NOW() 
+		WHERE id=$4 AND user_id=$5
+		RETURNING id, user_id, title, description, done, created_at, updated_at`,
+		todo.Title, todo.Description, todo.Done, id, userID,
+	).StructScan(&updatedTodo)
+
+	if err != nil {
+		// Handle the error; the update failed
+		return Todo{}, err
+	}
+
+	// Return the updated Todo struct
+	return updatedTodo, nil
 }
 
 func (db *Database) DeleteTodoForUser(userID string, id int) error {
