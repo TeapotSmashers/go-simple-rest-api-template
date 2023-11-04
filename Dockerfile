@@ -15,7 +15,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN go build -o my-go-api ./cmd/todos-backend
+RUN go build -o my-go-api ./cmd/todos-backend/main.go
 
 # Expose the port the application will run on
 EXPOSE 3000
