@@ -14,6 +14,11 @@ type Todo struct {
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`   // Matches TIMESTAMPTZ
 }
 
+type CreateTodo struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 func (db *Database) GetTodos(userID string) ([]Todo, error) {
 	var todos []Todo
 	err := db.conn.Select(&todos, "SELECT * FROM todos WHERE user_id=$1", userID)
@@ -26,9 +31,19 @@ func (db *Database) GetTodoByID(id int) (Todo, error) {
 	return todo, err
 }
 
-func (db *Database) CreateTodoForUser(userID string, todo Todo) error {
-	_, err := db.conn.Exec("INSERT INTO todos (user_id, title, description, done) VALUES ($1, $2, $3, $4)", userID, todo.Title, todo.Description, todo.Done)
-	return err
+// CreateTodoForUser inserts a new TODO for a user and returns the new ID
+func (db *Database) CreateTodoForUser(userID string, todo CreateTodo) (int, error) {
+	var todoID int // This will hold the new ID
+
+	// Use QueryRow to execute the query and RETURNING clause to get the new ID
+	err := db.conn.QueryRow("INSERT INTO todos (user_id, title, description) VALUES ($1, $2, $3) RETURNING id", userID, todo.Title, todo.Description).Scan(&todoID)
+	if err != nil {
+		// Handle the error; the insertion failed
+		return 0, err
+	}
+
+	// Return the new ID and no error
+	return todoID, nil
 }
 
 func (db *Database) SetTodoCompletedForUser(userID string, id int, done bool) error {

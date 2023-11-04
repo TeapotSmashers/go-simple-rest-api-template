@@ -112,21 +112,29 @@ func CreateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decode request body
-	var todo database.Todo
-	if err := json.NewDecoder(r.Body).Decode(&todo); err != nil {
+	var createTodo database.CreateTodo
+	if err := json.NewDecoder(r.Body).Decode(&createTodo); err != nil {
 		logs.Error("Error decoding request body", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// create todo
-	if err := database.DB.CreateTodoForUser(userID, todo); err != nil {
+	todoId, err := database.DB.CreateTodoForUser(userID, createTodo)
+	if err != nil {
 		logs.Error("Error creating todo", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	//
+	// get todo from database
+	todo, err := database.DB.GetTodoByID(todoId)
+
+	if err != nil {
+		logs.Error("Error getting todo from database", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	// return created todo
 	w.Header().Set("Content-Type", "application/json")
