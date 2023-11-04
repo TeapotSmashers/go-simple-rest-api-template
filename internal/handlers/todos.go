@@ -86,7 +86,8 @@ func UpdateTodoDone(w http.ResponseWriter, r *http.Request) {
 
 	// update todo
 	toBeSet := !todo.Done
-	if err := database.DB.SetTodoCompletedForUser(todoIDString, todoID, toBeSet); err != nil {
+	logs.Info("Setting todo done to", toBeSet)
+	if err := database.DB.SetTodoCompletedForUser(userID, todoID, toBeSet); err != nil {
 		logs.Error("Error updating todo", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
