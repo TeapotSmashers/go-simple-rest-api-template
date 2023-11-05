@@ -18,7 +18,7 @@ COPY . .
 RUN go build -o my-go-api ./cmd/todos-backend/main.go
 
 # Expose the port the application will run on
-EXPOSE 3000
+EXPOSE 4000
 
 # Run the application
 CMD ["./my-go-api"]
