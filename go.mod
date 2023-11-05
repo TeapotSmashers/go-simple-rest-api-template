@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/go-chi/chi v1.5.5
+	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/jwtauth/v5 v5.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/joho/godotenv v1.5.1

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 	chimiddleware "github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/sankalpmukim/todos-backend/internal/handlers"
 	"github.com/sankalpmukim/todos-backend/internal/initialize"
@@ -31,6 +32,14 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 	r.Get("/", handlers.HelloWorld)
 	r.Get("/healthz", handlers.HealthZ)
 	r.Group(func(r chi.Router) {
