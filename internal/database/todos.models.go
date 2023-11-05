@@ -6,7 +6,7 @@ import (
 
 type Todo struct {
 	ID          int       `db:"id" json:"id"`                   // Matches SERIAL type
-	UserID      string    `db:"user_id" json:"user_id"`         // Matches VARCHAR(255) and references users(id)
+	UserID      string    `db:"user_id" json:"-"`               // Matches VARCHAR(255) and references users(id)
 	Title       string    `db:"title" json:"title"`             // Matches VARCHAR(255)
 	Description string    `db:"description" json:"description"` // Matches TEXT and can be NULL
 	Done        bool      `db:"done" json:"done"`               // Matches BOOLEAN
